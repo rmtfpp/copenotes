@@ -52,7 +52,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: false,
 	})
 
-	session.CreateSession(*u, sessionToken, csrfToken)
+	session.CreateSession(u.ID, sessionToken, csrfToken)
 
 	log.Printf("login succesful for user %s", u.UserName)
 
