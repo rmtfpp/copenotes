@@ -6,6 +6,7 @@ import (
 
 	"github.com/rmtfpp/copenotes/pkg/auth"
 	"github.com/rmtfpp/copenotes/pkg/database"
+	"github.com/rmtfpp/copenotes/pkg/file"
 	"github.com/rmtfpp/copenotes/pkg/user"
 )
 
@@ -19,11 +20,13 @@ func main() {
 	database.InitializeDatabase()
 	user.MigrateUsers()
 	user.MigrateSessions()
+	user.MigrateFiles()
 
 	http.HandleFunc("/register", auth.Register)
 	http.HandleFunc("/login", auth.Login)
 	http.HandleFunc("/logout", logout)
 	http.HandleFunc("/protected", protected)
+	http.HandleFunc("/upload", file.Upload)
 	http.ListenAndServe(":8080", nil)
 	//user.DeleteUser("a1329985-516f-4396-abe7-3f801a320fb6")
 	//user.CreateUser("Luca", "Martinetti", "lucamarti@gmail.com", "passapa")

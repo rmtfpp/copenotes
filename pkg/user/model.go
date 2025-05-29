@@ -12,6 +12,7 @@ type User struct {
 	Email     string   `gorm:"unique;not null"`
 	Password  string   `gorm:"not null"`
 	Session   *Session `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
+	Files     []File   `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
@@ -25,4 +26,13 @@ type Session struct {
 	User         User      `gorm:"constraint:OnDelete:CASCADE"`
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+}
+
+type File struct {
+	ID        string `gorm:"unique;type:text;primaryKey"`
+	Name      string `gorm:"not null"`
+	Path      string `gorm:"not null"`
+	UserID    string `gorm:"not null"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

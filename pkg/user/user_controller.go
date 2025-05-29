@@ -49,22 +49,14 @@ func DeleteUser(idStr string) error {
 	return nil
 }
 
-func UsernameExists(username string) (bool, error) {
-	var count int64
-	err := database.DB.Model(&User{}).Where("user_name = ?", username).Count(&count).Error
+func GetUserById(id string) (*User, error) {
+	var user User
+	err := database.DB.Where("id = ?", id).First(&user).Error
 	if err != nil {
-		return false, err
+		log.Printf("failed to get user by id: %v", err)
+		return nil, err
 	}
-	return count > 0, nil
-}
-
-func EmailExists(email string) (bool, error) {
-	var count int64
-	err := database.DB.Model(&User{}).Where("email = ?", email).Count(&count).Error
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
+	return &user, nil
 }
 
 func GetUserByUsername(username string) (*User, error) {
@@ -85,6 +77,24 @@ func GetUserByEmail(email string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func UsernameExists(username string) (bool, error) {
+	var count int64
+	err := database.DB.Model(&User{}).Where("user_name = ?", username).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func EmailExists(email string) (bool, error) {
+	var count int64
+	err := database.DB.Model(&User{}).Where("email = ?", email).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func MigrateUsers() {

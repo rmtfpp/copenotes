@@ -12,47 +12,56 @@ import (
 
 func Login(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method != http.MethodPost {
-		err := http.StatusMethodNotAllowed
-		http.Error(w, "Invalid method", err)
+	if r.Method == http.MethodGet {
+		http.ServeFile(w, r, "web/templates/login.html")
 		return
 	}
 
-	email := r.FormValue("email")
-	password := r.FormValue("password")
+	if r.Method == http.MethodPost {
 
-	u, err := user.GetUserByEmail(email)
-	if err != nil {
-		err := http.StatusBadRequest
-		http.Error(w, "email not registered", err)
-		return
+		email := r.FormValue("email")
+		password := r.FormValue("password")
+
+		u, err := user.GetUserByEmail(email)
+		if err != nil {
+			err := http.StatusBadRequest
+			http.Error(w, "email not registered", err)
+			return
+		}
+
+		if !hash.CheckPasswordHash(password, u.Password) {
+			err := http.StatusUnauthorized
+			http.Error(w, "incorrect username or password", err)
+			return
+		}
+
+		if exists, _ := user.HasSession(u.ID); exists {
+			log.Printf("user %s already logged in", u.UserName)
+			return
+		}
+
+		sessionToken := tokens.GenerateToken(32)
+		csrfToken := tokens.GenerateToken(32)
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session_token",
+			Value:    sessionToken,
+			Expires:  time.Now().Add(24 * time.Hour),
+			HttpOnly: true,
+		})
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "csrf_token",
+			Value:    csrfToken,
+			Expires:  time.Now().Add(24 * time.Hour),
+			HttpOnly: false,
+		})
+
+		user.CreateSession(u.ID, sessionToken, csrfToken)
+
+		log.Printf("login succesful for user %s", u.UserName)
 	}
 
-	if !hash.CheckPasswordHash(password, u.Password) {
-		err := http.StatusUnauthorized
-		http.Error(w, "incorrect username or password", err)
-		return
-	}
-
-	sessionToken := tokens.GenerateToken(32)
-	csrfToken := tokens.GenerateToken(32)
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    sessionToken,
-		Expires:  time.Now().Add(24 * time.Hour),
-		HttpOnly: true,
-	})
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "csrf_token",
-		Value:    csrfToken,
-		Expires:  time.Now().Add(24 * time.Hour),
-		HttpOnly: false,
-	})
-
-	user.CreateSession(u.ID, sessionToken, csrfToken)
-
-	log.Printf("login succesful for user %s", u.UserName)
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 
 }

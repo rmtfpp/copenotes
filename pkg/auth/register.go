@@ -9,39 +9,39 @@ import (
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		err := http.StatusMethodNotAllowed
-		http.Error(w, "Invalid method", err)
+	if r.Method == http.MethodGet {
+		http.ServeFile(w, r, "web/templates/register.html")
 		return
 	}
 
-	firstname := r.FormValue("firstname")
-	lastname := r.FormValue("lastname")
-	username := r.FormValue("username")
-	email := r.FormValue("email")
-	password := r.FormValue("password")
+	if r.Method == http.MethodPost {
+		firstname := r.FormValue("firstname")
+		lastname := r.FormValue("lastname")
+		username := r.FormValue("username")
+		email := r.FormValue("email")
+		password := r.FormValue("password")
 
-	if len(email) < 8 || len(password) < 8 { // will have to check if email exists
-		err := http.StatusNotAcceptable
-		http.Error(w, "Invalid email/password", err)
+		if len(email) < 8 || len(password) < 8 {
+			http.Error(w, "Invalid email/password", http.StatusNotAcceptable)
+			return
+		}
+
+		if exists, _ := user.EmailExists(email); exists {
+			http.Error(w, "Email already registered", http.StatusConflict)
+			return
+		}
+		if exists, _ := user.UsernameExists(username); exists {
+			http.Error(w, "Username already registered", http.StatusConflict)
+			return
+		}
+
+		hashedPassword, _ := hash.HashPassword(password)
+		user.CreateUser(firstname, lastname, username, email, hashedPassword)
+		log.Printf("user %s registered successfully", username)
+
+		w.Write([]byte("Registration successful!"))
 		return
 	}
 
-	if exists, _ := user.EmailExists(email); exists {
-		err := http.StatusConflict
-		http.Error(w, "email already registered", err)
-		return
-	}
-
-	if exists, _ := user.UsernameExists(username); exists {
-		err := http.StatusConflict
-		http.Error(w, "email already registered", err)
-		return
-	}
-
-	hashedPassword, _ := hash.HashPassword(password)
-
-	user.CreateUser(firstname, lastname, username, email, hashedPassword)
-	log.Printf("user %s registered succesfully", username)
-
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }

@@ -3,13 +3,15 @@ package auth
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/rmtfpp/copenotes/pkg/user"
 )
 
-var ErrAuth1 = errors.New("Unauthorized1")
-var ErrAuth2 = errors.New("Unauthorized2")
-var ErrAuth3 = errors.New("Unauthorized3")
+var ErrAuth1 = errors.New("user doesnt exist")
+var ErrAuth2 = errors.New("unauthorized")
+var ErrAuth3 = errors.New("unauthorized")
+var ErrSessionExpired = errors.New("session expired")
 
 func Authorize(r *http.Request) (int, error) {
 
@@ -20,15 +22,18 @@ func Authorize(r *http.Request) (int, error) {
 		return 1, ErrAuth1
 	}
 
+	session, _ := user.GetSession(u.ID)
+	if session.ExpiresAt.Before(time.Now()) {
+		return 4, ErrSessionExpired
+	}
+
 	st, err := r.Cookie("session_token")
-	sessionTokenDb, _ := user.GetSessionToken(u.ID)
-	if err != nil || st.Value == "" || st.Value != sessionTokenDb {
+	if err != nil || st.Value == "" || st.Value != session.SessionToken {
 		return 2, ErrAuth2
 	}
 
 	csrf := r.Header.Get("X-CSRF-Token")
-	csrfTokenDb, _ := user.GetCSRFToken(u.ID)
-	if csrf != csrfTokenDb || csrf == "" {
+	if csrf != session.CSRFToken || csrf == "" {
 		return 3, ErrAuth3
 	}
 
