@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/rmtfpp/copenotes/pkg/auth"
 	"github.com/rmtfpp/copenotes/pkg/database"
-	"github.com/rmtfpp/copenotes/pkg/session"
 	"github.com/rmtfpp/copenotes/pkg/user"
 )
 
@@ -18,7 +18,7 @@ type Login struct {
 func main() {
 	database.InitializeDatabase()
 	user.MigrateUsers()
-	session.MigrateSessions()
+	user.MigrateSessions()
 
 	http.HandleFunc("/register", auth.Register)
 	http.HandleFunc("/login", auth.Login)
@@ -29,5 +29,22 @@ func main() {
 	//user.CreateUser("Luca", "Martinetti", "lucamarti@gmail.com", "passapa")
 }
 
-func logout(w http.ResponseWriter, r *http.Request)    {}
-func protected(w http.ResponseWriter, r *http.Request) {}
+func protected(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		err := http.StatusMethodNotAllowed
+		http.Error(w, "Invalid method", err)
+		return
+	}
+
+	if i, err := auth.Authorize(r); err != nil {
+		err := http.StatusUnauthorized
+		http.Error(w, "unauthorized", err)
+		fmt.Fprintf(w, "%d", i)
+		return
+	}
+
+	username := r.FormValue("username")
+	u, _ := user.GetUserByUsername(username)
+	fmt.Fprintf(w, "CSFR validation succesful! Welcome %s", u.FirstName)
+}
+func logout(w http.ResponseWriter, r *http.Request) {}

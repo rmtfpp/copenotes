@@ -4,33 +4,34 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/rmtfpp/copenotes/pkg/session"
 	"github.com/rmtfpp/copenotes/pkg/user"
 )
 
-var ErrAuth = errors.New("Unauthorized")
+var ErrAuth1 = errors.New("Unauthorized1")
+var ErrAuth2 = errors.New("Unauthorized2")
+var ErrAuth3 = errors.New("Unauthorized3")
 
-func Authorize(r *http.Request) error {
+func Authorize(r *http.Request) (int, error) {
 
 	username := r.FormValue("username")
 
 	u, err := user.GetUserByUsername(username)
 	if err != nil {
-		return ErrAuth
+		return 1, ErrAuth1
 	}
 
 	st, err := r.Cookie("session_token")
-	sessionTokenDb, _ := session.GetSessionToken(u.ID)
+	sessionTokenDb, _ := user.GetSessionToken(u.ID)
 	if err != nil || st.Value == "" || st.Value != sessionTokenDb {
-		return ErrAuth
+		return 2, ErrAuth2
 	}
 
 	csrf := r.Header.Get("X-CSRF-Token")
-	csrfTokenDb, _ := session.GetCSRFToken(u.ID)
+	csrfTokenDb, _ := user.GetCSRFToken(u.ID)
 	if csrf != csrfTokenDb || csrf == "" {
-		return ErrAuth
+		return 3, ErrAuth3
 	}
 
-	return nil
+	return 0, nil
 
 }

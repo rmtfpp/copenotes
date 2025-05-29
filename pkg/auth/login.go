@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rmtfpp/copenotes/pkg/session"
 	"github.com/rmtfpp/copenotes/pkg/user"
 	"github.com/rmtfpp/copenotes/pkg/utils/hash"
 	"github.com/rmtfpp/copenotes/pkg/utils/tokens"
@@ -52,7 +51,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: false,
 	})
 
-	session.CreateSession(u.ID, sessionToken, csrfToken)
+	user.CreateSession(u.ID, sessionToken, csrfToken)
 
 	log.Printf("login succesful for user %s", u.UserName)
 
